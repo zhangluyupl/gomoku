@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五子棋 Gomoku</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      color: #eee;
+    }
+    h1 { margin-bottom: 16px; font-weight: 300; letter-spacing: 4px; }
+    #status {
+      margin-bottom: 16px;
+      font-size: 18px;
+      height: 28px;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(15, 32px);
+      grid-template-rows: repeat(15, 32px);
+      background: #c8a45a;
+      background-image: linear-gradient(45deg, #d4b76a 25%, transparent 25%),
+                        linear-gradient(-45deg, #d4b76a 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #c8a45a 75%),
+                        linear-gradient(-45deg, transparent 75%, #c8a45a 75%);
+      background-size: 32px 32px;
+      background-position: 0 0, 0 16px, 16px -16px, -16px 0px;
+      border: 3px solid #8b6914;
+      border-radius: 4px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      cursor: pointer;
+    }
+    .cell {
+      width: 32px;
+      height: 32px;
+      position: relative;
+    }
+    .cell::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: linear-gradient(#8b6914, #8b6914);
+      background-size: 1px 100%;
+      background-position: left center;
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+    .cell::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: linear-gradient(to right, #8b6914, #8b6914);
+      background-size: 100% 1px;
+      background-position: center top;
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+    .piece {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+      transition: transform 0.1s;
+      z-index: 1;
+    }
+    .piece.black {
+      background: radial-gradient(circle at 35% 35%, #555, #111);
+    }
+    .piece.white {
+      background: radial-gradient(circle at 35% 35%, #fff, #ccc);
+    }
+    .piece:hover { transform: scale(1.05); }
+    #reset {
+      margin-top: 20px;
+      padding: 10px 32px;
+      font-size: 16px;
+      background: #c8a45a;
+      color: #222;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+    #reset:hover { background: #d4b76a; }
+    .win { animation: pulse 0.5s ease-in-out infinite alternate; }
+    @keyframes pulse { from { box-shadow: 2px 2px 6px rgba(0,0,0,0.4); } to { box-shadow: 2px 2px 20px rgba(255,215,0,0.8); } }
+  </style>
+</head>
+<body>
+  <h1>五 子 棋</h1>
+  <div id="status">黑棋先行</div>
+  <div id="board"></div>
+  <button id="reset">重新开始</button>
+
+  <script>
+    const SIZE = 15;
+    let board = Array(SIZE).fill(null).map(() => Array(SIZE).fill(0));
+    let currentPlayer = 1; // 1=black, 2=white
+    let gameOver = false;
+
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+
+    function init() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.r = r;
+          cell.dataset.c = c;
+          cell.addEventListener('click', () => place(r, c));
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function place(r, c) {
+      if (gameOver || board[r][c] !== 0) return;
+      board[r][c] = currentPlayer;
+      const idx = r * SIZE + c;
+      const piece = document.createElement('div');
+      piece.className = `piece ${currentPlayer === 1 ? 'black' : 'white'}`;
+      boardEl.children[idx].appendChild(piece);
+
+      if (checkWin(r, c)) {
+        gameOver = true;
+        statusEl.textContent = `${currentPlayer === 1 ? '黑棋' : '白棋'}获胜！`;
+        highlightWin(r, c);
+        return;
+      }
+
+      if (isFull()) {
+        gameOver = true;
+        statusEl.textContent = '平局！';
+        return;
+      }
+
+      currentPlayer = currentPlayer === 1 ? 2 : 1;
+      statusEl.textContent = `${currentPlayer === 1 ? '黑棋' : '白棋'}落子`;
+    }
+
+    function checkWin(r, c) {
+      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+      for (const [dr, dc] of dirs) {
+        let count = 1;
+        for (let i = 1; i < 5; i++) {
+          const nr = r + dr*i, nc = c + dc*i;
+          if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) count++;
+          else break;
+        }
+        for (let i = 1; i < 5; i++) {
+          const nr = r - dr*i, nc = c - dc*i;
+          if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) count++;
+          else break;
+        }
+        if (count >= 5) return true;
+      }
+      return false;
+    }
+
+    function highlightWin(r, c) {
+      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+      for (const [dr, dc] of dirs) {
+        let count = 1;
+        let cells = [[r,c]];
+        for (let i = 1; i < 5; i++) {
+          const nr = r + dr*i, nc = c + dc*i;
+          if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) { count++; cells.push([nr,nc]); }
+          else break;
+        }
+        for (let i = 1; i < 5; i++) {
+          const nr = r - dr*i, nc = c - dc*i;
+          if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) { count++; cells.push([nr,nc]); }
+          else break;
+        }
+        if (count >= 5) {
+          cells.forEach(([rr,cc]) => {
+            const idx = rr * SIZE + cc;
+            boardEl.children[idx].querySelector('.piece').classList.add('win');
+          });
+          return;
+        }
+      }
+    }
+
+    function isFull() {
+      return board.every(row => row.every(v => v !== 0));
+    }
+
+    document.getElementById('reset').addEventListener('click', () => {
+      board = Array(SIZE).fill(null).map(() => Array(SIZE).fill(0));
+      currentPlayer = 1;
+      gameOver = false;
+      statusEl.textContent = '黑棋先行';
+      init();
+    });
+
+    init();
+  </script>
+</body>
+</html>
