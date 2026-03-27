@@ -398,7 +398,7 @@
     if (!gameOver && vsAI && currentPlayer === WHITE) {
       // 简单难度多等一会，显得更像"在想"
       const delay = aiLevel === 1 ? 500 + Math.random() * 500 : 300;
-      setTimeout(aiMove, delay);
+      aiTimeoutId = setTimeout(aiMove, delay);
     }
   }
 
@@ -552,10 +552,12 @@
   }
 
   // ============ AI ============
+  let aiTimeoutId = null;
+
   function aiMove() {
     if (gameOver) return;
     const move = findBestMove(aiLevel);
-    if (move) placePiece(move.r, move.c, true);
+    if (move && !gameOver) placePiece(move.r, move.c, true);
   }
 
   function findBestMove(level) {
@@ -604,20 +606,20 @@
     return moves;
   }
 
-  function evaluatePos(r, c, player) {
-    let score = 0;
-    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
-    for (const [dr,dc] of dirs) score += evalLine(r,c,dr,dc,player);
-    return score;
-  }
-
-  function evalLine(r, c, dr, dc, player) {
+  function scoreLine(board, r, c, dr, dc, player) {
     let count=0, open=0, blocks=0;
     for(let i=1;i<=4;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=SIZE||nc<0||nc>=SIZE){blocks++;break;}if(board[nr][nc]===player)count++;else if(board[nr][nc]===EMPTY){open++;break;}else{blocks++;break;}}
     for(let i=1;i<=4;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=SIZE||nc<0||nc>=SIZE){blocks++;break;}if(board[nr][nc]===player)count++;else if(board[nr][nc]===EMPTY){open++;break;}else{blocks++;break;}}
     if(blocks===2)return 0;
     const m={5:100000,4:open>=1?10000:5000,3:open>=2?5000:open>=1?500:100,2:open>=2?200:open>=1?50:10};
     return m[count]||0;
+  }
+
+  function evaluatePos(r, c, player) {
+    let score = 0;
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    for (const [dr,dc] of dirs) score += scoreLine(board, r, c, dr, dc, player);
+    return score;
   }
 
   function minimax(sim, depth, alpha, beta, isMax) {
@@ -652,9 +654,24 @@
   }
 
   function getCandSim(sim) {
-    const moves=[], visited=new Set();
-    for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) {
-      if(sim[r][c]!==EMPTY){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&sim[nr][nc]===EMPTY&&!visited.has(`${nr},${nc}`)){visited.add(`${nr},${nc}`);moves.push({r:nr,c:nc});}}}}
+    const moves = [], visited = new Set();
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (sim[r][c] !== EMPTY) {
+          for (let dr = -2; dr <= 2; dr++) {
+            for (let dc = -2; dc <= 2; dc++) {
+              const nr = r + dr, nc = c + dc;
+              if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && sim[nr][nc] === EMPTY) {
+                const key = nr + ',' + nc;
+                if (!visited.has(key)) {
+                  visited.add(key);
+                  moves.push({ r: nr, c: nc });
+                }
+              }
+            }
+          }
+        }
+      }
     }
     return moves;
   }
@@ -662,29 +679,14 @@
   function evalBoard(sim) {
     let score=0;
     for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) {
-      if(sim[r][c]===WHITE) score+=evalLineSim(sim,r,c,WHITE);
-      else if(sim[r][c]===BLACK) score-=evalLineSim(sim,r,c,BLACK);
+      if(sim[r][c]===WHITE) score+=scoreLine(sim,r,c,1,0,WHITE)+scoreLine(sim,r,c,0,1,WHITE)+scoreLine(sim,r,c,1,1,WHITE)+scoreLine(sim,r,c,1,-1,WHITE);
+      else if(sim[r][c]===BLACK) score-=scoreLine(sim,r,c,1,0,BLACK)+scoreLine(sim,r,c,0,1,BLACK)+scoreLine(sim,r,c,1,1,BLACK)+scoreLine(sim,r,c,1,-1,BLACK);
     }
     return score;
   }
 
   function evalBoardAt(sim,r,c,player) {
-    let s=0;const dirs=[[1,0],[0,1],[1,1],[1,-1]];
-    for(const[dr,dc]of dirs)s+=evalLineSim(sim,r,c,player);
-    return s;
-  }
-
-  function evalLineSim(sim,r,c,player) {
-    const dirs=[[1,0],[0,1],[1,1],[1,-1]];let total=0;
-    for(const[dr,dc]of dirs){
-      let count=1,open=0,blocks=0;
-      for(let i=1;i<=4;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=SIZE||nc<0||nc>=SIZE){blocks++;break;}if(sim[nr][nc]===player)count++;else if(sim[nr][nc]===EMPTY){open++;break;}else{blocks++;break;}}
-      for(let i=1;i<=4;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=SIZE||nc<0||nc>=SIZE){blocks++;break;}if(sim[nr][nc]===player)count++;else if(sim[nr][nc]===EMPTY){open++;break;}else{blocks++;break;}}
-      if(blocks===2)continue;
-      const m={5:100000,4:open>=1?10000:5000,3:open>=2?5000:open>=1?500:100,2:open>=2?200:open>=1?50:10};
-      total+=m[count]||0;
-    }
-    return total;
+    return scoreLine(sim,r,c,1,0,player)+scoreLine(sim,r,c,0,1,player)+scoreLine(sim,r,c,1,1,player)+scoreLine(sim,r,c,1,-1,player);
   }
 
   // ============ Helpers ============
@@ -716,6 +718,7 @@
     }
     currentPlayer=lastMove?lastMove.player:BLACK;
     gameOver=false;
+    if (aiTimeoutId) { clearTimeout(aiTimeoutId); aiTimeoutId = null; }
     const svg=document.querySelector('#board-wrapper>svg');
     if(svg)svg.remove();
     const name=currentPlayer===BLACK?'⚫ 黑棋':'⚪ 白棋';
@@ -724,6 +727,7 @@
   }
 
   function resetGame() {
+    if (aiTimeoutId) { clearTimeout(aiTimeoutId); aiTimeoutId = null; }
     board=Array(SIZE).fill(null).map(()=>Array(SIZE).fill(EMPTY));
     currentPlayer=BLACK; gameOver=false; history=[]; lastMove=null;
     const svg=document.querySelector('#board-wrapper>svg');
