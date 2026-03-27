@@ -15,129 +15,352 @@
       justify-content: center;
       font-family: 'Segoe UI', sans-serif;
       color: #eee;
+      padding: 16px;
     }
-    h1 { margin-bottom: 16px; font-weight: 300; letter-spacing: 4px; }
+    h1 { margin-bottom: 8px; font-weight: 300; letter-spacing: 6px; font-size: 24px; }
+    
+    /* Mode selector */
+    #mode-select {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .mode-btn {
+      padding: 6px 16px;
+      border: 1px solid #c8a45a;
+      background: transparent;
+      color: #c8a45a;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: #c8a45a;
+      color: #1a1a2e;
+      font-weight: 600;
+    }
+    .mode-btn:hover:not(.active) { background: rgba(200,164,90,0.15); }
+
+    /* Difficulty selector */
+    #diff-select {
+      display: none;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .diff-btn {
+      padding: 4px 14px;
+      border: 1px solid #888;
+      background: transparent;
+      color: #aaa;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .diff-btn.active {
+      border-color: #c8a45a;
+      color: #c8a45a;
+    }
+    .diff-btn:hover:not(.active) { color: #ccc; }
+
     #status {
-      margin-bottom: 16px;
-      font-size: 18px;
-      height: 28px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      height: 24px;
+      color: #c8a45a;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+
+    /* Score display */
+    #scores {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .score-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .score-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .score-dot.black { background: radial-gradient(circle at 35% 35%, #555, #111); }
+    .score-dot.white { background: radial-gradient(circle at 35% 35%, #fff, #ccc); }
+
+    /* Board */
+    #board-wrapper {
+      position: relative;
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(15, 32px);
-      grid-template-rows: repeat(15, 32px);
+      grid-template-columns: repeat(15, 1fr);
       background: #c8a45a;
-      background-image: linear-gradient(45deg, #d4b76a 25%, transparent 25%),
-                        linear-gradient(-45deg, #d4b76a 25%, transparent 25%),
-                        linear-gradient(45deg, transparent 75%, #c8a45a 75%),
-                        linear-gradient(-45deg, transparent 75%, #c8a45a 75%);
-      background-size: 32px 32px;
-      background-position: 0 0, 0 16px, 16px -16px, -16px 0px;
+      background-image:
+        linear-gradient(#8b6914 1px, transparent 1px),
+        linear-gradient(0deg, #8b6914 1px, transparent 1px);
       border: 3px solid #8b6914;
       border-radius: 4px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
       cursor: pointer;
+      /* Size adapts to screen */
+      width: min(90vw, 480px);
+      height: min(90vw, 480px);
     }
     .cell {
-      width: 32px;
-      height: 32px;
       position: relative;
     }
-    .cell::before {
+    /* Star points (天元和星位) */
+    .cell.star::before {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image: linear-gradient(#8b6914, #8b6914);
-      background-size: 1px 100%;
-      background-position: left center;
-      background-repeat: no-repeat;
-      pointer-events: none;
-    }
-    .cell::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image: linear-gradient(to right, #8b6914, #8b6914);
-      background-size: 100% 1px;
-      background-position: center top;
-      background-repeat: no-repeat;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #8b6914;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
       pointer-events: none;
     }
     .piece {
       position: absolute;
-      width: 26px;
-      height: 26px;
       border-radius: 50%;
-      top: 3px; left: 3px;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
       box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+      z-index: 2;
       transition: transform 0.1s;
-      z-index: 1;
     }
     .piece.black {
+      width: 80%; height: 80%;
       background: radial-gradient(circle at 35% 35%, #555, #111);
     }
     .piece.white {
+      width: 80%; height: 80%;
       background: radial-gradient(circle at 35% 35%, #fff, #ccc);
     }
-    .piece:hover { transform: scale(1.05); }
-    #reset {
-      margin-top: 20px;
-      padding: 10px 32px;
-      font-size: 16px;
+    .piece:hover { transform: translate(-50%, -50%) scale(1.08); }
+    .piece.last {
+      box-shadow: 0 0 0 2px #ffd700, 2px 2px 8px rgba(0,0,0,0.5);
+    }
+    .piece.win-piece {
+      animation: winPulse 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes winPulse {
+      from { box-shadow: 0 0 0 2px #ffd700, 2px 2px 6px rgba(0,0,0,0.4); }
+      to { box-shadow: 0 0 0 3px #ffd700, 0 0 16px rgba(255,215,0,0.8); }
+    }
+    .piece.thinking {
+      animation: think 0.4s ease-in-out infinite alternate;
+    }
+    @keyframes think {
+      from { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+
+    /* Win line overlay */
+    #win-line {
+      position: absolute;
+      pointer-events: none;
+      z-index: 10;
+      stroke: #ffd700;
+      stroke-width: 4;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 6px rgba(255,215,0,0.8));
+    }
+
+    /* Controls */
+    #controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .ctrl-btn {
+      padding: 8px 20px;
+      font-size: 14px;
       background: #c8a45a;
-      color: #222;
+      color: #1a1a2e;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
+      transition: background 0.2s;
     }
-    #reset:hover { background: #d4b76a; }
-    .win { animation: pulse 0.5s ease-in-out infinite alternate; }
-    @keyframes pulse { from { box-shadow: 2px 2px 6px rgba(0,0,0,0.4); } to { box-shadow: 2px 2px 20px rgba(255,215,0,0.8); } }
+    .ctrl-btn:hover { background: #d4b76a; }
+    .ctrl-btn.secondary {
+      background: transparent;
+      border: 1px solid #555;
+      color: #aaa;
+    }
+    .ctrl-btn.secondary:hover { border-color: #888; color: #eee; }
+
+    /* History panel */
+    #history {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #888;
+      max-height: 60px;
+      overflow: hidden;
+    }
+    #history span {
+      margin-right: 12px;
+    }
+    #history .move {
+      color: #c8a45a;
+    }
+
+    /* Responsive */
+    @media (max-width: 520px) {
+      h1 { font-size: 20px; letter-spacing: 4px; }
+      #board { width: 92vw; height: 92vw; }
+    }
   </style>
 </head>
 <body>
   <h1>五 子 棋</h1>
+
+  <div id="mode-select">
+    <button class="mode-btn active" data-mode="pvp">双人对战</button>
+    <button class="mode-btn" data-mode="pve">人机对战</button>
+  </div>
+
+  <div id="diff-select">
+    <button class="diff-btn" data-level="1">简单</button>
+    <button class="diff-btn active" data-level="2">中等</button>
+    <button class="diff-btn" data-level="3">困难</button>
+  </div>
+
   <div id="status">黑棋先行</div>
-  <div id="board"></div>
-  <button id="reset">重新开始</button>
+
+  <div id="scores">
+    <div class="score-item"><div class="score-dot black"></div>黑方: <span id="score-black">0</span></div>
+    <div class="score-item"><div class="score-dot white"></div>白方: <span id="score-white">0</span></div>
+  </div>
+
+  <div id="board-wrapper">
+    <div id="board"></div>
+    <svg id="win-line" width="0" height="0"></svg>
+  </div>
+
+  <div id="controls">
+    <button class="ctrl-btn" id="undo-btn" disabled>悔棋</button>
+    <button class="ctrl-btn secondary" id="reset-btn">重新开始</button>
+  </div>
+
+  <div id="history"></div>
 
   <script>
+    // ============ Constants ============
     const SIZE = 15;
-    let board = Array(SIZE).fill(null).map(() => Array(SIZE).fill(0));
-    let currentPlayer = 1; // 1=black, 2=white
-    let gameOver = false;
+    const EMPTY = 0, BLACK = 1, WHITE = 2;
+    // Star points on 15x15 board
+    const STARS = [[3,3],[3,7],[3,11],[7,3],[7,7],[7,11],[11,3],[11,7],[11,11]];
 
+    // ============ State ============
+    let board = Array(SIZE).fill(null).map(() => Array(SIZE).fill(EMPTY));
+    let currentPlayer = BLACK;
+    let gameOver = false;
+    let vsAI = false;
+    let aiLevel = 2;
+    let scores = { [BLACK]: 0, [WHITE]: 0 };
+    let history = []; // [{r, c, player}]
+    let lastMove = null;
+
+    // ============ DOM ============
     const boardEl = document.getElementById('board');
     const statusEl = document.getElementById('status');
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    const diffBtns = document.querySelectorAll('.diff-btn');
+    const diffSelect = document.getElementById('diff-select');
+    const undoBtn = document.getElementById('undo-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const historyEl = document.getElementById('history');
+    const winLineEl = document.getElementById('win-line');
+    const scoreBlackEl = document.getElementById('score-black');
+    const scoreWhiteEl = document.getElementById('score-white');
 
+    // ============ Init ============
     function init() {
       boardEl.innerHTML = '';
       for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
           const cell = document.createElement('div');
           cell.className = 'cell';
+          if (STARS.some(([sr,sc]) => sr===r && sc===c)) cell.classList.add('star');
           cell.dataset.r = r;
           cell.dataset.c = c;
-          cell.addEventListener('click', () => place(r, c));
+          cell.addEventListener('click', () => handleClick(r, c));
           boardEl.appendChild(cell);
         }
       }
     }
 
-    function place(r, c) {
-      if (gameOver || board[r][c] !== 0) return;
+    // ============ Mode ============
+    modeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        modeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        vsAI = btn.dataset.mode === 'pve';
+        diffSelect.style.display = vsAI ? 'flex' : 'none';
+        resetGame();
+      });
+    });
+
+    diffBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        diffBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        aiLevel = parseInt(btn.dataset.level);
+      });
+    });
+
+    // ============ Click Handler ============
+    function handleClick(r, c) {
+      if (gameOver || board[r][c] !== EMPTY) return;
+      if (vsAI && currentPlayer === WHITE) return; // AI's turn
+
+      placePiece(r, c);
+      if (gameOver) return;
+      if (vsAI && currentPlayer === WHITE) {
+        setTimeout(aiMove, 300);
+      }
+    }
+
+    // ============ Place Piece ============
+    function placePiece(r, c, isAI = false) {
       board[r][c] = currentPlayer;
+      history.push({r, c, player: currentPlayer});
+      lastMove = {r, c};
+
       const idx = r * SIZE + c;
+      const cell = boardEl.children[idx];
       const piece = document.createElement('div');
-      piece.className = `piece ${currentPlayer === 1 ? 'black' : 'white'}`;
-      boardEl.children[idx].appendChild(piece);
+      piece.className = `piece ${currentPlayer === BLACK ? 'black' : 'white'}`;
+      if (isAI) piece.classList.add('thinking');
+      cell.appendChild(piece);
+
+      // Remove thinking indicator from AI's previous piece
+      document.querySelectorAll('.piece.thinking').forEach(p => p.classList.remove('thinking'));
+
+      // Highlight last move
+      document.querySelectorAll('.piece.last').forEach(p => p.classList.remove('last'));
+      piece.classList.add('last');
+
+      updateHistory();
+      updateUndoBtn();
 
       if (checkWin(r, c)) {
         gameOver = true;
-        statusEl.textContent = `${currentPlayer === 1 ? '黑棋' : '白棋'}获胜！`;
-        highlightWin(r, c);
+        scores[currentPlayer]++;
+        updateScores();
+        statusEl.textContent = `${currentPlayer === BLACK ? '黑' : '白'}棋获胜！`;
+        drawWinLine(r, c);
+        highlightWinPieces(r, c);
         return;
       }
 
@@ -147,30 +370,14 @@
         return;
       }
 
-      currentPlayer = currentPlayer === 1 ? 2 : 1;
-      statusEl.textContent = `${currentPlayer === 1 ? '黑棋' : '白棋'}落子`;
+      currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
+      statusEl.textContent = vsAI
+        ? (currentPlayer === BLACK ? '你执黑先行' : 'AI 思考中...')
+        : `${currentPlayer === BLACK ? '黑' : '白'}棋落子`;
     }
 
+    // ============ Win Check ============
     function checkWin(r, c) {
-      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
-      for (const [dr, dc] of dirs) {
-        let count = 1;
-        for (let i = 1; i < 5; i++) {
-          const nr = r + dr*i, nc = c + dc*i;
-          if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) count++;
-          else break;
-        }
-        for (let i = 1; i < 5; i++) {
-          const nr = r - dr*i, nc = c - dc*i;
-          if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) count++;
-          else break;
-        }
-        if (count >= 5) return true;
-      }
-      return false;
-    }
-
-    function highlightWin(r, c) {
       const dirs = [[1,0],[0,1],[1,1],[1,-1]];
       for (const [dr, dc] of dirs) {
         let count = 1;
@@ -185,29 +392,323 @@
           if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) { count++; cells.push([nr,nc]); }
           else break;
         }
-        if (count >= 5) {
-          cells.forEach(([rr,cc]) => {
-            const idx = rr * SIZE + cc;
-            boardEl.children[idx].querySelector('.piece').classList.add('win');
-          });
-          return;
+        if (count >= 5) return true;
+      }
+      return false;
+    }
+
+    // ============ Win Line Drawing ============
+    function getWinLineCells(r, c) {
+      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+      for (const [dr, dc] of dirs) {
+        let count = 1;
+        let cells = [[r,c]];
+        for (let i = 1; i < 5; i++) {
+          const nr = r + dr*i, nc = c + dc*i;
+          if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) { count++; cells.push([nr,nc]); }
+          else break;
         }
+        for (let i = 1; i < 5; i++) {
+          const nr = r - dr*i, nc = c - dc*i;
+          if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === currentPlayer) { count++; cells.push([nr,nc]); }
+          else break;
+        }
+        if (count >= 5) return cells;
+      }
+      return null;
+    }
+
+    function drawWinLine(r, c) {
+      const cells = getWinLineCells(r, c);
+      if (!cells) return;
+      const boardRect = boardEl.getBoundingClientRect();
+      const cellSize = boardRect.width / SIZE;
+      const padding = cellSize / 2;
+      const [r1, c1] = cells[0];
+      const [r2, c2] = cells[cells.length - 1];
+      const x1 = padding + c1 * cellSize;
+      const y1 = padding + r1 * cellSize;
+      const x2 = padding + c2 * cellSize;
+      const y2 = padding + r2 * cellSize;
+      winLineEl.setAttribute('width', boardRect.width);
+      winLineEl.setAttribute('height', boardRect.height);
+      winLineEl.innerHTML = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ffd700" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>`;
+    }
+
+    function highlightWinPieces(r, c) {
+      const cells = getWinLineCells(r, c);
+      if (!cells) return;
+      cells.forEach(([rr,cc]) => {
+        const idx = rr * SIZE + cc;
+        const piece = boardEl.children[idx].querySelector('.piece');
+        if (piece) piece.classList.add('win-piece');
+      });
+    }
+
+    // ============ AI ============
+    function aiMove() {
+      if (gameOver) return;
+      const move = findBestMove(aiLevel);
+      if (move) placePiece(move.r, move.c, true);
+    }
+
+    function findBestMove(level) {
+      // Get candidate moves (near existing pieces)
+      const candidates = getCandidateMoves();
+      if (candidates.length === 0) {
+        // First move: center or nearby
+        const center = Math.floor(SIZE / 2);
+        candidates.push({r: center, c: center});
+      }
+
+      if (level === 1) {
+        // Easy: random among good moves
+        const scored = candidates.map(pos => ({...pos, score: evaluatePos(pos.r, pos.c, WHITE)}));
+        scored.sort((a, b) => b.score - a.score);
+        const top = scored.slice(0, Math.min(3, scored.length));
+        return top[Math.floor(Math.random() * top.length)];
+      }
+
+      // Medium/Hard: minimax with alpha-beta
+      const scored = candidates.map(pos => ({...pos, score: evaluatePos(pos.r, pos.c, WHITE)}));
+      scored.sort((a, b) => b.score - a.score);
+      const topCandidates = scored.slice(0, Math.min(level === 2 ? 5 : 8, scored.length));
+
+      let bestMove = topCandidates[0];
+      let bestScore = -Infinity;
+
+      for (const cand of topCandidates) {
+        const simBoard = board.map(row => [...row]);
+        simBoard[cand.r][cand.c] = WHITE;
+        const score = minimax(simBoard, 2, -Infinity, Infinity, false, level);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = cand;
+        }
+      }
+      return bestMove;
+    }
+
+    function getCandidateMoves() {
+      const moves = [];
+      const visited = new Set();
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (board[r][c] !== EMPTY) {
+            for (let dr = -2; dr <= 2; dr++) {
+              for (let dc = -2; dc <= 2; dc++) {
+                const nr = r + dr, nc = c + dc;
+                if (nr>=0 && nr<SIZE && nc>=0 && nc<SIZE && board[nr][nc] === EMPTY) {
+                  const key = `${nr},${nc}`;
+                  if (!visited.has(key)) { visited.add(key); moves.push({r: nr, c: nc}); }
+                }
+              }
+            }
+          }
+        }
+      }
+      return moves;
+    }
+
+    function evaluatePos(r, c, player) {
+      let score = 0;
+      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+      for (const [dr, dc] of dirs) {
+        score += evaluateLine(r, c, dr, dc, player);
+      }
+      return score;
+    }
+
+    function evaluateLine(r, c, dr, dc, player) {
+      let count = 0, open = 0, blocks = 0;
+      // Forward
+      for (let i = 1; i <= 4; i++) {
+        const nr = r + dr*i, nc = c + dc*i;
+        if (nr<0||nr>=SIZE||nc<0||nc>=SIZE) { blocks++; break; }
+        if (board[nr][nc] === player) count++;
+        else if (board[nr][nc] === EMPTY) { open++; break; }
+        else { blocks++; break; }
+      }
+      // Backward
+      for (let i = 1; i <= 4; i++) {
+        const nr = r - dr*i, nc = c - dc*i;
+        if (nr<0||nr>=SIZE||nc<0||nc>=SIZE) { blocks++; break; }
+        if (board[nr][nc] === player) count++;
+        else if (board[nr][nc] === EMPTY) { open++; break; }
+        else { blocks++; break; }
+      }
+      if (blocks === 2) return 0;
+      const patterns = {
+        5: 100000, 4: open >= 1 ? 10000 : 5000,
+        3: open >= 2 ? 5000 : (open >= 1 ? 500 : 100),
+        2: open >= 2 ? 200 : (open >= 1 ? 50 : 10)
+      };
+      return patterns[count] || 0;
+    }
+
+    function minimax(simBoard, depth, alpha, beta, isMaximizing, level) {
+      if (depth === 0) return evaluateBoard(simBoard);
+      const moves = getCandidateMovesSim(simBoard);
+      if (moves.length === 0) return evaluateBoard(simBoard);
+      const scored = moves.map(pos => ({...pos, score: evaluateBoardAt(simBoard, pos.r, pos.c, WHITE)}));
+      scored.sort((a, b) => isMaximizing ? b.score - a.score : a.score - b.score);
+      const searchMoves = scored.slice(0, level === 2 ? 4 : 6);
+
+      if (isMaximizing) {
+        let maxScore = -Infinity;
+        for (const m of searchMoves) {
+          simBoard[m.r][m.c] = WHITE;
+          const score = minimax(simBoard, depth-1, alpha, beta, false, level);
+          simBoard[m.r][m.c] = EMPTY;
+          maxScore = Math.max(maxScore, score);
+          alpha = Math.max(alpha, score);
+          if (beta <= alpha) break;
+        }
+        return maxScore;
+      } else {
+        let minScore = Infinity;
+        for (const m of searchMoves) {
+          simBoard[m.r][m.c] = BLACK;
+          const score = minimax(simBoard, depth-1, alpha, beta, true, level);
+          simBoard[m.r][m.c] = EMPTY;
+          minScore = Math.min(minScore, score);
+          beta = Math.min(beta, score);
+          if (beta <= alpha) break;
+        }
+        return minScore;
       }
     }
 
-    function isFull() {
-      return board.every(row => row.every(v => v !== 0));
+    function getCandidateMovesSim(simBoard) {
+      const moves = [];
+      const visited = new Set();
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (simBoard[r][c] !== EMPTY) {
+            for (let dr = -2; dr <= 2; dr++) {
+              for (let dc = -2; dc <= 2; dc++) {
+                const nr = r + dr, nc = c + dc;
+                if (nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&simBoard[nr][nc]===EMPTY) {
+                  const key = `${nr},${nc}`;
+                  if (!visited.has(key)) { visited.add(key); moves.push({r:nr,c:nc}); }
+                }
+              }
+            }
+          }
+        }
+      }
+      return moves;
     }
 
-    document.getElementById('reset').addEventListener('click', () => {
-      board = Array(SIZE).fill(null).map(() => Array(SIZE).fill(0));
-      currentPlayer = 1;
-      gameOver = false;
-      statusEl.textContent = '黑棋先行';
-      init();
-    });
+    function evaluateBoard(simBoard) {
+      let score = 0;
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (simBoard[r][c] === WHITE) score += evaluateLineSim(simBoard, r, c, WHITE);
+          else if (simBoard[r][c] === BLACK) score -= evaluateLineSim(simBoard, r, c, BLACK);
+        }
+      }
+      return score;
+    }
 
+    function evaluateBoardAt(simBoard, r, c, player) {
+      let s = 0;
+      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+      for (const [dr, dc] of dirs) s += evaluateLineSim(simBoard, r, c, player);
+      return s;
+    }
+
+    function evaluateLineSim(simBoard, r, c, player) {
+      const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+      let total = 0;
+      for (const [dr, dc] of dirs) {
+        let count = 1, open = 0, blocks = 0;
+        for (let i = 1; i <= 4; i++) {
+          const nr=r+dr*i, nc=c+dc*i;
+          if (nr<0||nr>=SIZE||nc<0||nc>=SIZE) { blocks++; break; }
+          if (simBoard[nr][nc]===player) count++;
+          else if (simBoard[nr][nc]===EMPTY) { open++; break; }
+          else { blocks++; break; }
+        }
+        for (let i = 1; i <= 4; i++) {
+          const nr=r-dr*i, nc=c-dc*i;
+          if (nr<0||nr>=SIZE||nc<0||nc>=SIZE) { blocks++; break; }
+          if (simBoard[nr][nc]===player) count++;
+          else if (simBoard[nr][nc]===EMPTY) { open++; break; }
+          else { blocks++; break; }
+        }
+        if (blocks === 2) continue;
+        const patterns = {5:100000, 4: open>=1?10000:5000, 3: open>=2?5000: (open>=1?500:100), 2: open>=2?200: (open>=1?50:10)};
+        total += patterns[count] || 0;
+      }
+      return total;
+    }
+
+    // ============ Helpers ============
+    function isFull() {
+      return board.every(row => row.every(v => v !== EMPTY));
+    }
+
+    function updateHistory() {
+      historyEl.innerHTML = history.map((h, i) =>
+        `<span class="move">${i+1}. ${h.player===BLACK?'黑':'白'}(${h.c+1},${h.r+1})</span>`
+      ).join('');
+    }
+
+    function updateUndoBtn() {
+      undoBtn.disabled = history.length === 0 || gameOver;
+    }
+
+    function updateScores() {
+      scoreBlackEl.textContent = scores[BLACK];
+      scoreWhiteEl.textContent = scores[WHITE];
+    }
+
+    function undo() {
+      if (history.length === 0 || gameOver) return;
+      // Undo both player and AI moves if in AI mode
+      const toUndo = vsAI && history.length >= 2 ? 2 : 1;
+      for (let i = 0; i < toUndo; i++) {
+        const last = history.pop();
+        board[last.r][last.c] = EMPTY;
+        const idx = last.r * SIZE + last.c;
+        boardEl.children[idx].innerHTML = '';
+      }
+      lastMove = history.length > 0 ? history[history.length-1] : null;
+      if (lastMove) {
+        const idx = lastMove.r * SIZE + lastMove.c;
+        boardEl.children[idx].querySelector('.piece')?.classList.add('last');
+      }
+      currentPlayer = last?.player || BLACK;
+      gameOver = false;
+      winLineEl.innerHTML = '';
+      statusEl.textContent = vsAI
+        ? (currentPlayer === BLACK ? '你执黑先行' : 'AI 思考中...')
+        : `${currentPlayer === BLACK ? '黑' : '白'}棋落子`;
+      updateHistory();
+      updateUndoBtn();
+    }
+
+    function resetGame() {
+      board = Array(SIZE).fill(null).map(() => Array(SIZE).fill(EMPTY));
+      currentPlayer = BLACK;
+      gameOver = false;
+      history = [];
+      lastMove = null;
+      winLineEl.innerHTML = '';
+      statusEl.textContent = vsAI ? '你执黑先行' : '黑棋先行';
+      init();
+      updateHistory();
+      updateUndoBtn();
+    }
+
+    // ============ Events ============
+    resetBtn.addEventListener('click', resetGame);
+    undoBtn.addEventListener('click', undo);
+
+    // ============ Start ============
     init();
+    updateScores();
   </script>
 </body>
 </html>
