@@ -339,7 +339,10 @@
   let gameOver = false;
   let vsAI = false;
   let aiLevel = 2;
-  let scores = {[BLACK]: 0, [WHITE]: 0};
+  let scores = (() => {
+    try { return JSON.parse(localStorage.getItem('gomoku_scores')) || {[BLACK]:0,[WHITE]:0}; }
+    catch { return {[BLACK]:0,[WHITE]:0}; }
+  })();
   let history = [];
   let lastMove = null;
 
@@ -393,7 +396,9 @@
     if (vsAI && currentPlayer === WHITE) return;
     placePiece(r, c);
     if (!gameOver && vsAI && currentPlayer === WHITE) {
-      setTimeout(aiMove, 400);
+      // 简单难度多等一会，显得更像"在想"
+      const delay = aiLevel === 1 ? 500 + Math.random() * 500 : 300;
+      setTimeout(aiMove, delay);
     }
   }
 
@@ -409,7 +414,14 @@
     if (isAI) piece.classList.add('thinking');
     cell.appendChild(piece);
 
-    document.querySelectorAll('.piece.thinking').forEach(p => p.classList.remove('thinking'));
+    // 移除其他 thinking 状态
+    document.querySelectorAll('.piece.thinking').forEach(p => {
+      if (p !== piece) p.classList.remove('thinking');
+    });
+    // AI 的 thinking 棋子在 600ms 后自动消失（配合 AI 思考动画）
+    if (isAI) {
+      setTimeout(() => piece.classList.remove('thinking'), 600);
+    }
 
     // Highlight last move
     document.querySelectorAll('.piece.last').forEach(p => p.classList.remove('last'));
@@ -612,7 +624,7 @@
     if (depth===0) return evalBoard(sim);
     const moves = getCandSim(sim);
     if (!moves.length) return evalBoard(sim);
-    const scored = moves.map(p=>({...p,s:evalBoardAt(sim,p.r,p.c,WHITE)}));
+    const scored = moves.map(p=>({...p,s:evalBoardAt(sim,p.r,p.c,isMax?WHITE:BLACK)}));
     scored.sort((a,b)=>isMax?b.s-a.s:a.s-b.s);
     const search = scored.slice(0, isMax?4:5);
 
@@ -685,7 +697,7 @@
   }
 
   function updateUndoBtn() { undoBtn.disabled = history.length===0 || gameOver; }
-  function updateScores() { scoreBlackEl.textContent=scores[BLACK]; scoreWhiteEl.textContent=scores[WHITE]; }
+  function updateScores() { scoreBlackEl.textContent=scores[BLACK]; scoreWhiteEl.textContent=scores[WHITE]; localStorage.setItem('gomoku_scores', JSON.stringify(scores)); }
 
   function undo() {
     if (!history.length || gameOver) return;
@@ -697,10 +709,6 @@
       boardEl.children[idx].innerHTML='';
     }
     lastMove=history.length?history[history.length-1]:null;
-    if(lastMove){
-      const idx=lastMove.r*SIZE+lastMove.c;
-      boardEl.children[idx].querySelector('.piece')?.classList.add('last');
-    }
     document.querySelectorAll('.piece.last').forEach(p=>p.classList.remove('last'));
     if(lastMove){
       const idx=lastMove.r*SIZE+lastMove.c;
